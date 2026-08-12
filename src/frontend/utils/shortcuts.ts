@@ -189,10 +189,11 @@ export function keydown(e: KeyboardEvent) {
         if (key === "z" && e.shiftKey) key = "Z"
 
         // Let text formatting shortcuts be handled by edit tools when a text box is active.
-        if (isFormattingKey(e) && isEditingText()) return
+        // (Ctrl+Shift+B is the FreeNote toggle, not bold — keep it out of this guard.)
+        if (!e.shiftKey && isFormattingKey(e) && isEditingText()) return
 
         // use default input shortcuts on supported devices
-        const exeption = ["e", "i", "n", "o", "s", "a", "z", "Z", "y"]
+        const exeption = ["e", "i", "n", "o", "s", "a", "z", "Z", "y", "B"]
         const macShortcutDebug = false
         if ((key === "i" && document.activeElement?.closest(".editItem")) || (document.activeElement?.classList?.contains("edit") && !exeption.includes(key) && get(os).platform !== "darwin" && !macShortcutDebug)) {
             return
