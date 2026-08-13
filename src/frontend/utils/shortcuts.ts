@@ -10,6 +10,7 @@ import { createScriptureShow } from "../components/drawer/bible/scripture"
 import { addItem } from "../components/edit/scripts/itemHelpers"
 import { keysToID, sortByName } from "../components/helpers/array"
 import { copy, cut, deleteAction, duplicate, paste, selectAll } from "../components/helpers/clipboard"
+import { createNewFreeNote } from "../components/freenote/freeNote"
 import { history, redo, undo } from "../components/helpers/history"
 import { getExtension, getMedia, getMediaLayerType, getMediaStyle, getMediaType } from "../components/helpers/media"
 import { getAllNormalOutputs, getFirstActiveOutput, refreshOut, setOutput, startFolderTimer, toggleOutputs } from "../components/helpers/output"
@@ -20,7 +21,7 @@ import { importFromClipboard } from "../converters/importHelpers"
 import { addSection } from "../converters/project"
 import { requestMain, sendMain } from "../IPC/main"
 import { changeSlidesView } from "../show/slides"
-import { activeDrawerTab, activeEdit, activeFocus, activePage, activePopup, activeProject, activeStage, alertMessage, contextActive, drawer, editMode, focusedArea, focusMode, guideActive, media, os, outLocked, outputs, projects, quickSearchActive, refreshEditSlide, selected, showRecentlyUsedProjects, special, spellcheck, styles, timelineRecordingAction, topContextActive, videosData, volume } from "../stores"
+import { activeDrawerTab, activeEdit, activeFocus, activePage, activePopup, activeProject, activeStage, alertMessage, contextActive, drawer, editMode, focusedArea, focusMode, freeNoteActive, guideActive, media, os, outLocked, outputs, projects, quickSearchActive, refreshEditSlide, selected, showRecentlyUsedProjects, special, spellcheck, styles, timelineRecordingAction, topContextActive, videosData, volume } from "../stores"
 import { audioExtensions, imageExtensions, videoExtensions } from "../values/extensions"
 import { drawerTabs } from "../values/tabs"
 import { activeShow } from "./../stores"
@@ -53,6 +54,11 @@ const ctrlKeys = {
 
 const shiftCtrlKeys = {
     d: () => (get(activePage) === "show" && get(activeShow) && (get(activeShow)?.type || "show") === "show" ? activePopup.set("next_timer") : ""),
+    b: () => {
+        // toggle FreeNote open/closed (Ctrl+Shift+B must work while the modal is open too)
+        if (get(freeNoteActive)) freeNoteActive.set(false)
+        else createNewFreeNote()
+    },
     // t: () => activePopup.set("translate"),
     t: () => {
         // toggle text edit
@@ -151,6 +157,11 @@ export function keydown(e: KeyboardEvent) {
 
     if (get(guideActive)) return
 
+    // FreeNote is a modal editor: while open, it owns every keyboard event.
+    // (Presenter controller keys live in the output Preview window, not here.)
+    // Exception: Ctrl/Cmd+Shift+B must still toggle FreeNote closed from the keyboard.
+    if (get(freeNoteActive) && !(e.ctrlKey && e.shiftKey && getNormalizedKey(e) === "b") && !(e.metaKey && e.shiftKey && getNormalizedKey(e) === "b")) return
+
     // clicking e.g. "Show" tab button will focus that making number tab change not work
     if (document.activeElement?.nodeName === "BUTTON") (document.activeElement as any).blur()
 
@@ -178,10 +189,11 @@ export function keydown(e: KeyboardEvent) {
         if (key === "z" && e.shiftKey) key = "Z"
 
         // Let text formatting shortcuts be handled by edit tools when a text box is active.
-        if (isFormattingKey(e) && isEditingText()) return
+        // (Ctrl+Shift+B is the FreeNote toggle, not bold — keep it out of this guard.)
+        if (!e.shiftKey && isFormattingKey(e) && isEditingText()) return
 
         // use default input shortcuts on supported devices
-        const exeption = ["e", "i", "n", "o", "s", "a", "z", "Z", "y"]
+        const exeption = ["e", "i", "n", "o", "s", "a", "z", "Z", "y", "B"]
         const macShortcutDebug = false
         if ((key === "i" && document.activeElement?.closest(".editItem")) || (document.activeElement?.classList?.contains("edit") && !exeption.includes(key) && get(os).platform !== "darwin" && !macShortcutDebug)) {
             return
@@ -464,7 +476,7 @@ export async function togglePlayingMedia(e: Event | null = null, back = false, a
 
     if (api) {
         // get playing audio
-        let audioId = AudioPlayer.getAllPlaying(false)[0]
+        const audioId = AudioPlayer.getAllPlaying(false)[0]
         if (audioId) item = { id: audioId, type: "audio" }
         else if (currentlyPlaying) item = { id: currentlyPlaying, type: backgroundType === "player" ? "player" : "video" }
     }

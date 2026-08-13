@@ -1,11 +1,12 @@
 name: Playwright Tests
 on:
-    # turning off temporarily as it does not work properly!
-    # Error: electron.launch: Process failed to launch!
-    # push:
-    #     branches: [dev]
-    # pull_request:
-    #     branches: [dev]
+    # Re-enabled: the electron.launch failure was the SUID chrome-sandbox not
+    # being usable on CI runners; start.test.ts now launches Electron with
+    # --no-sandbox, which is the standard fix for this.
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
     workflow_dispatch:
 
 jobs:

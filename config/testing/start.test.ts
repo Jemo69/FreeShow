@@ -12,7 +12,7 @@ test.beforeEach(async ({ context }) => {
 test("Launch electron app", async () => {
     const tmpSettingFolder = tmp.dirSync({ unsafeCleanup: true })
     const electronApp = await electron.launch({
-        args: ["."],
+        args: [".", "--no-sandbox"],
         env: { ...process.env, NODE_ENV: "production", FS_MOCK_STORE_PATH: tmpSettingFolder.name },
     })
 
