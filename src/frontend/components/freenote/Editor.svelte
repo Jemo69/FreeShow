@@ -71,7 +71,6 @@
 
     // toolbar active state, refreshed on every selection/transaction
     let headingLevel = 0
-    let state: { [key: string]: boolean } = {}
     function readState(): { [key: string]: boolean } {
         if (!editor) return {}
         headingLevel = editor.isActive("heading") ? (editor.getAttributes("heading").level as number) || 0 : 0
@@ -86,7 +85,8 @@
             superscript: editor.isActive("superscript") === true,
             alignLeft: editor.isActive({ textAlign: "left" }) === true,
             alignCenter: editor.isActive({ textAlign: "center" }) === true,
-            alignRight: editor.isActive({ textAlign: "right" }) === true
+            alignRight: editor.isActive({ textAlign: "right" }) === true,
+            link: editor.isActive("link") === true
         }
     }
 
